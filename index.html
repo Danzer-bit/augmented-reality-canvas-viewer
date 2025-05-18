@@ -138,6 +138,11 @@
       line-height: 1.4;
     }
 
+    /* Hide the description on AR view (it will only show on non-AR screens) */
+    .a-fullscreen .footer {
+      display: none;
+    }
+
     /* Camera Toggle Button */
     .camera-toggle {
       position: fixed;
@@ -148,32 +153,10 @@
       pointer-events: auto;
     }
 
-    /* Container for AR scene, limiting to 80% of viewport */
-    #ar-scene-container {
-      width: 80%;
-      height: 80vh;
-      margin: 0 auto;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-      border-radius: 8px;
-      margin-top: 100px; /* Space for the header */
-    }
-
-    /* Ensure A-Frame scene fits container */
-    .a-canvas {
-      width: 100% !important;
-      height: 100% !important;
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-    }
-
     /* Non-AR mode container */
     .non-ar-container {
-      width: 80%;
-      height: 80vh;
-      margin: 100px auto 0;
+      width: 100%;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -181,8 +164,6 @@
       background-color: #f7f7f7;
       padding: 20px;
       text-align: center;
-      border-radius: 8px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
     }
 
     .non-ar-container h2 {
@@ -196,11 +177,29 @@
       line-height: 1.5;
     }
 
-    /* Adjust the AR scene  */
+    /* Adjust the AR scene container */
     .a-enter-ar {
       position: fixed !important;
       bottom: 20px !important;
       left: 20px !important;
+    }
+
+    /* Make sure the scene canvas takes full viewport */
+    .a-canvas {
+      width: 100vw !important;
+      height: 100vh !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+    }
+
+    /* Fix for AR.js fullscreen */
+    .a-fullscreen {
+      width: 100% !important;
+      height: 100% !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
     }
 
     @media (max-width: 768px) {
@@ -225,17 +224,11 @@
       .camera-toggle {
         bottom: 70px;
       }
-      
-      #ar-scene-container, .non-ar-container {
-        width: 90%;
-        height: 70vh;
-        margin-top: 80px;
-      }
     }
   </style>
 </head>
 <body>
-  <!-- UI Overlay - Always visible -->
+  <!-- UI Overlay -->
   <div class="ui-overlay">
     <div class="header">
       <h1>AR Visualizer</h1>
@@ -275,7 +268,7 @@
     <button id="start-ar-button">Start AR Experience</button>
   </div>
 
-  <!-- AR Scene Container (initially visible) -->
+  <!-- AR Scene (initially visible) -->
   <div id="ar-scene-container">
     <a-scene embedded arjs="debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;" vr-mode-ui="enabled: false">
       <!-- AR Camera -->
@@ -391,13 +384,6 @@
         // a simpler approach above. In a production app, you'd implement the
         // full WebXR AR Hit Test here.
       }
-    });
-
-    // Ensure UI elements on top of canvas are always clickable
-    document.addEventListener('DOMContentLoaded', function() {
-      // Check if camera is active on load and update UI accordingly
-      toggleCamera();
-      toggleCamera(); // Toggle twice to ensure proper initial state
     });
   </script>
 </body>
