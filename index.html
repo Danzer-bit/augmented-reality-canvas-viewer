@@ -138,11 +138,6 @@
       line-height: 1.4;
     }
 
-    /* Hide the description on AR view (it will only show on non-AR screens) */
-    .a-fullscreen .footer {
-      display: none;
-    }
-
     /* Camera Toggle Button */
     .camera-toggle {
       position: fixed;
@@ -176,6 +171,15 @@
       max-width: 600px;
       line-height: 1.5;
     }
+    
+    /* AR scene container - limiting to 80% of screen width */
+    #ar-scene-container {
+      width: 80%;
+      height: 80vh;
+      margin: 0 auto;
+      overflow: hidden;
+      position: relative;
+    }
 
     /* Adjust the AR scene container */
     .a-enter-ar {
@@ -184,20 +188,11 @@
       left: 20px !important;
     }
 
-    /* Make sure the scene canvas takes full viewport */
+    /* Make sure the scene canvas takes full viewport of its container */
     .a-canvas {
-      width: 100vw !important;
-      height: 100vh !important;
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-    }
-
-    /* Fix for AR.js fullscreen */
-    .a-fullscreen {
       width: 100% !important;
       height: 100% !important;
-      position: fixed !important;
+      position: absolute !important;
       top: 0 !important;
       left: 0 !important;
     }
@@ -224,11 +219,16 @@
       .camera-toggle {
         bottom: 70px;
       }
+      
+      #ar-scene-container {
+        width: 100%;
+        height: 75vh;
+      }
     }
   </style>
 </head>
 <body>
-  <!-- UI Overlay -->
+  <!-- UI Overlay - always visible -->
   <div class="ui-overlay">
     <div class="header">
       <h1>AR Visualizer</h1>
@@ -252,7 +252,7 @@
   <!-- Camera Toggle Button -->
   <button class="camera-toggle" id="camera-toggle">Close Camera</button>
 
-  <!-- Footer with description - visible only outside AR mode -->
+  <!-- Footer with description -->
   <div class="footer">
     <div class="description">
       Select a 3D model from the dropdown menu and tap on any detected surface to place it. 
@@ -295,18 +295,22 @@
     const arSceneContainer = document.getElementById('ar-scene-container');
     const nonArContainer = document.getElementById('non-ar-container');
     const startArButton = document.getElementById('start-ar-button');
+    const uiOverlay = document.querySelector('.ui-overlay');
     
     // Event Listeners
     modelSelect.addEventListener('change', function(event) {
+      // Only store the selected model URL, don't place it automatically
       selectedModelUrl = event.target.value;
     });
     
     resetButton.addEventListener('click', function() {
       // Remove all placed models
-      placedModels.forEach(model => {
-        modelsContainer.removeChild(model);
-      });
-      placedModels = [];
+      while (placedModels.length > 0) {
+        const model = placedModels.pop();
+        if (model && model.parentNode) {
+          modelsContainer.removeChild(model);
+        }
+      }
       updateModelCount();
     });
     
@@ -374,6 +378,8 @@
         nonArContainer.style.display = 'flex';
         cameraToggle.textContent = 'Open Camera';
       }
+      // Ensure UI overlay remains visible regardless of camera state
+      uiOverlay.style.display = 'flex';
     }
     
     // Custom AR.js components for better plane detection
