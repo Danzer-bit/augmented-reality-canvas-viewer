@@ -26,6 +26,9 @@
       overflow: hidden;
       margin: 0;
       padding: 0;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
     }
     
     /* UI Overlay */
@@ -59,6 +62,7 @@
       gap: 10px;
       margin-top: 15px;
       pointer-events: auto; /* Make controls clickable */
+      flex-wrap: wrap; /* Allow controls to wrap on small screens */
     }
     
     .dropdown {
@@ -137,6 +141,65 @@
       display: none;
     }
 
+    /* Camera Toggle Button */
+    .camera-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2000;
+      background-color: rgba(221, 169, 0, 0.9);
+      pointer-events: auto;
+    }
+
+    /* Non-AR mode container */
+    .non-ar-container {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: #f7f7f7;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .non-ar-container h2 {
+      color: #dda900;
+      margin-bottom: 20px;
+    }
+
+    .non-ar-container p {
+      margin-bottom: 30px;
+      max-width: 600px;
+      line-height: 1.5;
+    }
+
+    /* Adjust the AR scene container */
+    .a-enter-ar {
+      position: fixed !important;
+      bottom: 20px !important;
+      left: 20px !important;
+    }
+
+    /* Make sure the scene canvas takes full viewport */
+    .a-canvas {
+      width: 100vw !important;
+      height: 100vh !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+    }
+
+    /* Fix for AR.js fullscreen */
+    .a-fullscreen {
+      width: 100% !important;
+      height: 100% !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+    }
+
     @media (max-width: 768px) {
       h1 {
         font-size: 1.5rem;
@@ -154,6 +217,10 @@
 
       .description {
         font-size: 0.8rem;
+      }
+      
+      .camera-toggle {
+        bottom: 70px;
       }
     }
   </style>
@@ -180,34 +247,52 @@
     </div>
   </div>
 
+  <!-- Camera Toggle Button -->
+  <button class="camera-toggle" id="camera-toggle">Close Camera</button>
+
   <!-- Footer with description - visible only outside AR mode -->
   <div class="footer">
     <div class="description">
       Select a 3D model from the dropdown menu and tap on any detected surface to place it. 
       You can place up to 5 models at once. Use the Reset button to clear all placed models.
+      Use the Camera button to close or open the AR view.
     </div>
   </div>
 
-  <!-- AR Scene -->
-  <a-scene embedded arjs="debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;" vr-mode-ui="enabled: false">
-    <!-- AR Camera -->
-    <a-entity camera></a-entity>
-    
-    <!-- Container for models -->
-    <a-entity id="models-container"></a-entity>
-  </a-scene>
+  <!-- Non-AR Container (initially hidden) -->
+  <div class="non-ar-container" id="non-ar-container" style="display: none;">
+    <h2>AR Visualizer</h2>
+    <p>Welcome to the AR Visualizer. Click the button below to start the AR experience and place 3D models in your environment.</p>
+    <button id="start-ar-button">Start AR Experience</button>
+  </div>
+
+  <!-- AR Scene (initially visible) -->
+  <div id="ar-scene-container">
+    <a-scene embedded arjs="debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;" vr-mode-ui="enabled: false">
+      <!-- AR Camera -->
+      <a-entity camera></a-entity>
+      
+      <!-- Container for models -->
+      <a-entity id="models-container"></a-entity>
+    </a-scene>
+  </div>
 
   <script>
     // Global variables
     let selectedModelUrl = '';
     let placedModels = [];
     const MAX_MODELS = 5;
+    let cameraActive = true;
     
     // DOM Elements
     const modelSelect = document.getElementById('model-select');
     const resetButton = document.getElementById('reset-button');
     const modelCount = document.getElementById('model-count');
     const modelsContainer = document.getElementById('models-container');
+    const cameraToggle = document.getElementById('camera-toggle');
+    const arSceneContainer = document.getElementById('ar-scene-container');
+    const nonArContainer = document.getElementById('non-ar-container');
+    const startArButton = document.getElementById('start-ar-button');
     
     // Event Listeners
     modelSelect.addEventListener('change', function(event) {
@@ -223,11 +308,19 @@
       updateModelCount();
     });
     
+    cameraToggle.addEventListener('click', function() {
+      toggleCamera();
+    });
+    
+    startArButton.addEventListener('click', function() {
+      toggleCamera();
+    });
+    
     // Setup scene click listener for model placement
     document.addEventListener('click', function(event) {
-      // Skip if no model is selected or max models reached
-      if (!selectedModelUrl || placedModels.length >= MAX_MODELS) {
-        if (placedModels.length >= MAX_MODELS) {
+      // Skip if camera is not active or no model selected or max models reached
+      if (!cameraActive || !selectedModelUrl || placedModels.length >= MAX_MODELS) {
+        if (placedModels.length >= MAX_MODELS && cameraActive && selectedModelUrl) {
           alert('Maximum number of models (5) reached. Please reset to add more.');
         }
         return;
@@ -263,6 +356,22 @@
     // Helper Functions
     function updateModelCount() {
       modelCount.textContent = placedModels.length;
+    }
+    
+    function toggleCamera() {
+      cameraActive = !cameraActive;
+      
+      if (cameraActive) {
+        // Show AR scene, hide non-AR container
+        arSceneContainer.style.display = 'block';
+        nonArContainer.style.display = 'none';
+        cameraToggle.textContent = 'Close Camera';
+      } else {
+        // Hide AR scene, show non-AR container
+        arSceneContainer.style.display = 'none';
+        nonArContainer.style.display = 'flex';
+        cameraToggle.textContent = 'Open Camera';
+      }
     }
     
     // Custom AR.js components for better plane detection
